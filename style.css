@@ -1,0 +1,126 @@
+/* ---------- Colours (light and dark) ---------- */
+:root {
+  --bg: #f6f4ee;
+  --card: #ffffff;
+  --text: #1c1c1c;
+  --muted: #5b5b5b;
+  --brand: #1f6f43;
+  --brand-text: #ffffff;
+  --accent: #c8501e;
+  --border: #d9d4c7;
+  --ok: #1f6f43;
+  --warn: #a15c00;
+  --warn-bg: #fff3dc;
+  --info-bg: #e7f1ec;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #121412; --card: #1e221f; --text: #f0f0ea; --muted: #b5b8b2;
+    --brand: #3fa56b; --brand-text: #0b0f0c; --accent: #ff8a57; --border: #343a35;
+    --ok: #5cc98a; --warn: #ffbf5e; --warn-bg: #3a2c12; --info-bg: #1c2e24;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #121412; --card: #1e221f; --text: #f0f0ea; --muted: #b5b8b2;
+  --brand: #3fa56b; --brand-text: #0b0f0c; --accent: #ff8a57; --border: #343a35;
+  --ok: #5cc98a; --warn: #ffbf5e; --warn-bg: #3a2c12; --info-bg: #1c2e24;
+  color-scheme: dark;
+}
+
+/* ---------- Base ---------- */
+* { box-sizing: border-box; }
+html { font-size: 19px; }
+body {
+  margin: 0; min-height: 100vh; display: flex; flex-direction: column;
+  background: var(--bg); color: var(--text);
+  font-family: "Noto Sans Bengali", "Noto Sans Myanmar", "Padauk", "Myanmar Text", "Hind Siliguri", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  line-height: 1.5;
+}
+main { flex: 1; width: 100%; max-width: 640px; margin: 0 auto; padding: 16px 14px 24px; outline: none; }
+h2 { font-size: 1.4rem; margin: 4px 0 14px; }
+h3 { font-size: 1.1rem; margin: 18px 0 8px; }
+p { margin: 0 0 12px; }
+.muted { color: var(--muted); }
+
+/* ---------- Top bar & footer ---------- */
+.topbar {
+  position: sticky; top: 0; z-index: 5;
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 12px; background: var(--brand); color: var(--brand-text);
+}
+.topbar h1 { flex: 1; font-size: 1rem; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.icon-btn, .pill-btn {
+  min-width: 48px; min-height: 48px; border: 2px solid currentColor; border-radius: 14px;
+  background: transparent; color: inherit; font-size: 1.2rem; cursor: pointer;
+}
+.pill-btn { font-size: .9rem; padding: 0 12px; font-weight: 600; }
+.footer {
+  text-align: center; padding: 14px 10px 18px; font-size: .85rem;
+  color: var(--muted); border-top: 1px solid var(--border); background: var(--card);
+}
+.offline-bar { background: var(--warn-bg); color: var(--warn); text-align: center; padding: 6px; font-size: .9rem; }
+
+/* ---------- Home tiles ---------- */
+.tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.tile {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+  min-height: 128px; padding: 12px; border-radius: 20px; border: 2px solid var(--border);
+  background: var(--card); color: var(--text); font-size: 1.05rem; font-weight: 600;
+  text-decoration: none; text-align: center; cursor: pointer;
+}
+.tile .emoji { font-size: 2.4rem; line-height: 1; }
+.tile:active { transform: scale(.97); }
+.tile.soon { opacity: .75; }
+.tile small { font-weight: 400; font-size: .75rem; color: var(--muted); }
+
+/* ---------- Buttons & inputs ---------- */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  min-height: 56px; padding: 10px 18px; border-radius: 16px; border: none;
+  background: var(--brand); color: var(--brand-text); font-size: 1rem; font-weight: 700;
+  cursor: pointer; text-decoration: none;
+}
+.btn.secondary { background: transparent; color: var(--brand); border: 2px solid var(--brand); }
+.btn.danger { background: transparent; color: var(--accent); border: 2px solid var(--accent); }
+.btn.small { min-height: 46px; padding: 6px 14px; font-size: .9rem; }
+.btn.full { width: 100%; }
+.btn:disabled { opacity: .5; }
+.btn-row { display: flex; flex-wrap: wrap; gap: 10px; margin: 10px 0; }
+label { display: block; font-weight: 600; margin: 14px 0 6px; }
+input[type=text], input[type=search], textarea, select {
+  width: 100%; min-height: 56px; padding: 12px 14px; font-size: 1.05rem;
+  border: 2px solid var(--border); border-radius: 14px; background: var(--card); color: var(--text);
+  font-family: inherit;
+}
+textarea { min-height: 100px; resize: vertical; }
+input:focus, textarea:focus, select:focus, .btn:focus-visible, .tile:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.check { display: flex; gap: 10px; align-items: flex-start; font-weight: 400; }
+.check input { width: 26px; height: 26px; flex: none; }
+
+/* ---------- Cards, badges, notes ---------- */
+.card { background: var(--card); border: 2px solid var(--border); border-radius: 18px; padding: 14px; margin: 10px 0; }
+.card .marma { font-size: 1.3rem; font-weight: 700; line-height: 1.9; }
+.card .missing { color: var(--muted); font-style: italic; }
+.card .line { margin: 2px 0; }
+.badge { display: inline-block; margin-top: 8px; padding: 3px 10px; border-radius: 999px; font-size: .8rem; font-weight: 700; }
+.badge.ok { background: var(--info-bg); color: var(--ok); }
+.badge.warn { background: var(--warn-bg); color: var(--warn); }
+.note { background: var(--info-bg); border-radius: 14px; padding: 12px 14px; margin: 10px 0; }
+.note.warn { background: var(--warn-bg); color: var(--warn); }
+.result { font-size: 1.35rem; font-weight: 700; line-height: 1.9; }
+textarea, input[type=text] { line-height: 1.8; }
+.chips { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 6px; margin-bottom: 6px; }
+.chip {
+  flex: none; min-height: 46px; padding: 6px 16px; border-radius: 999px; border: 2px solid var(--border);
+  background: var(--card); color: var(--text); font-size: .95rem; cursor: pointer;
+}
+.chip.on { background: var(--brand); border-color: var(--brand); color: var(--brand-text); font-weight: 700; }
+.rec-dot { width: 14px; height: 14px; border-radius: 50%; background: #e0261b; display: inline-block; animation: blink 1s infinite; }
+@keyframes blink { 50% { opacity: .2; } }
+.toast {
+  position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 20;
+  background: var(--text); color: var(--bg); padding: 12px 20px; border-radius: 14px; font-weight: 600; max-width: 90vw;
+}
+@media (max-width: 340px) { .tiles { grid-template-columns: 1fr; } }

@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Marma Translator · মারমা অনুবাদক</title>
+  <meta name="description" content="Free Marma – Bangla – English translator for the Chittagong Hill Tracts. Works offline.">
+  <meta name="theme-color" content="#1f6f43">
+  <link rel="icon" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="style.css">
+  <script>
+    // Apply saved theme before the page paints (avoids a white flash in dark mode)
+    (function () { try { var th = localStorage.getItem('theme'); if (th) document.documentElement.dataset.theme = th; } catch (e) {} })();
+  </script>
+</head>
+<body>
+  <header class="topbar">
+    <button class="icon-btn" id="homeBtn" aria-label="Home">🏠</button>
+    <h1 id="appTitle">মারমা অনুবাদক</h1>
+    <button class="pill-btn" id="langBtn">English</button>
+    <button class="icon-btn" id="themeBtn" aria-label="Dark mode">🌙</button>
+  </header>
+
+  <div id="offlineBar" class="offline-bar" hidden></div>
+
+  <main id="app" tabindex="-1"></main>
+
+  <footer class="footer">
+    <div>Developed by Capt Natique, 89 LC</div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
