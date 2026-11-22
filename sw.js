@@ -1,6 +1,6 @@
 // Offline helper. Saves the website in the browser so it opens without internet.
 // When you change any file, increase this number by 1 so phones get the new version.
-const VERSION = 'marma-v1';
+const VERSION = 'marma-v2';
 
 const FILES = [
   './',
