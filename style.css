@@ -124,3 +124,7 @@ textarea, input[type=text] { line-height: 1.8; }
   background: var(--text); color: var(--bg); padding: 12px 20px; border-radius: 14px; font-weight: 600; max-width: 90vw;
 }
 @media (max-width: 340px) { .tiles { grid-template-columns: 1fr; } }
+
+.thumb { display: block; max-width: 100%; max-height: 220px; border-radius: 14px; margin: 6px 0 10px; object-fit: cover; }
+details.card summary { list-style: none; }
+details.card[open] summary { margin-bottom: 6px; }

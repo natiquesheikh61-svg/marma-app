@@ -1,0 +1,94 @@
+{
+ "categories": [
+  {
+   "id": "greet",
+   "name_bn": "শুভেচ্ছা",
+   "name_en": "Greetings",
+   "sort": 0
+  },
+  {
+   "id": "help",
+   "name_bn": "সাহায্য",
+   "name_en": "Help",
+   "sort": 1
+  },
+  {
+   "id": "health",
+   "name_bn": "স্বাস্থ্য",
+   "name_en": "Health",
+   "sort": 2
+  },
+  {
+   "id": "market",
+   "name_bn": "বাজার",
+   "name_en": "Market",
+   "sort": 3
+  },
+  {
+   "id": "travel",
+   "name_bn": "যাতায়াত",
+   "name_en": "Travel",
+   "sort": 4
+  },
+  {
+   "id": "family",
+   "name_bn": "পরিবার",
+   "name_en": "Family",
+   "sort": 5
+  },
+  {
+   "id": "food",
+   "name_bn": "খাবার",
+   "name_en": "Food",
+   "sort": 6
+  },
+  {
+   "id": "nature",
+   "name_bn": "প্রকৃতি",
+   "name_en": "Nature",
+   "sort": 7
+  },
+  {
+   "id": "animals",
+   "name_bn": "পশুপাখি",
+   "name_en": "Animals",
+   "sort": 8
+  },
+  {
+   "id": "body",
+   "name_bn": "শরীর",
+   "name_en": "Body",
+   "sort": 9
+  },
+  {
+   "id": "time",
+   "name_bn": "সময় ও দিন",
+   "name_en": "Time & days",
+   "sort": 10
+  },
+  {
+   "id": "numbers",
+   "name_bn": "সংখ্যা",
+   "name_en": "Numbers",
+   "sort": 11
+  },
+  {
+   "id": "school",
+   "name_bn": "স্কুল",
+   "name_en": "School",
+   "sort": 12
+  },
+  {
+   "id": "farming",
+   "name_bn": "চাষাবাদ",
+   "name_en": "Farming",
+   "sort": 13
+  },
+  {
+   "id": "other",
+   "name_bn": "অন্যান্য",
+   "name_en": "Other",
+   "sort": 14
+  }
+ ]
+}
