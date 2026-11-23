@@ -10,6 +10,6 @@
 //  If left empty, the app still works, but only on each phone by itself.
 // ================================================================
 window.MARMA_CONFIG = {
-  SUPABASE_URL: '',
-  SUPABASE_KEY: ''
+  SUPABASE_URL: 'https://eukmlxtbafwpntvxnueg.supabase.co/rest/v1/',
+  SUPABASE_KEY: 'sb_publishable_Gz96eK0_LqFxA4pGKosB5w_a2ORpOR7'
 };
