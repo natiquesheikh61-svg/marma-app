@@ -1,11 +1,11 @@
 // Offline helper. Saves the website in the browser so it opens without internet.
 // When you change any file, increase this number by 1 so phones get the new version.
-const VERSION = 'marma-v4';
+const VERSION = 'marma-v5';
 const MEDIA = 'marma-media'; // approved voices & pictures from Supabase (kept between versions)
 
 const FILES = [
-  './', './index.html', './style.css', './app.js', './config.js',
-  './data/phrases.json', './data/categories.json', './icons/icon-192.png'
+  './', './index.html', './style.css', './app.js', './learn.js', './config.js',
+  './data/phrases.json', './data/categories.json', './data/course.json', './icons/icon-192.png'
 ];
 
 self.addEventListener('install', (event) => {

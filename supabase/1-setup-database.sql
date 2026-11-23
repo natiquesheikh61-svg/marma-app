@@ -1,7 +1,7 @@
 -- =====================================================================
 --  Marma Translator – database setup for Supabase
 --  HOW TO USE: Supabase → SQL Editor → New query → paste ALL of this → Run.
---  It is safe to run only once on a new project.
+--  It is SAFE TO RUN AGAIN: anything already created is kept, nothing is deleted.
 --
 --  RULE: No Marma words are put in here by the computer. Every Marma
 --  word comes from a Marma speaker and is approved by a checker.
@@ -11,7 +11,7 @@
 -- ---------------------------------------------------------------------
 -- 1. CATEGORIES  (topics like Greetings, Health, Market…)
 -- ---------------------------------------------------------------------
-create table public.categories (
+create table if not exists public.categories (
   id       text primary key,                 -- short code, e.g. 'health'
   name_bn  text not null,                    -- Bangla name shown in the app
   name_en  text not null,                    -- English name shown in the app
@@ -24,7 +24,7 @@ create table public.categories (
 --    You add people here yourself (see the guide). Nobody can add
 --    themselves from the app.
 -- ---------------------------------------------------------------------
-create table public.reviewers (
+create table if not exists public.reviewers (
   user_id      uuid primary key references auth.users(id) on delete cascade,
   display_name text not null,                -- shown as "checked by"
   is_admin     boolean not null default false,
@@ -41,7 +41,7 @@ $$;
 -- ---------------------------------------------------------------------
 -- 3. ENTRIES  (the APPROVED Marma words & sentences everyone sees)
 -- ---------------------------------------------------------------------
-create table public.entries (
+create table if not exists public.entries (
   id              uuid primary key default gen_random_uuid(),
   kind            text not null default 'word' check (kind in
                     ('word','phrase','sentence','question','proverb','idiom',
@@ -67,13 +67,13 @@ create table public.entries (
   updated_at      timestamptz not null default now(),
   constraint entries_has_meaning check (coalesce(bn,'') <> '' or coalesce(en,'') <> '')
 );
-create index entries_updated_at_idx on public.entries (updated_at);
+create index if not exists entries_updated_at_idx on public.entries (updated_at);
 
 
 -- ---------------------------------------------------------------------
 -- 4. SUBMISSIONS  (new words sent by anyone, WAITING for a checker. Private.)
 -- ---------------------------------------------------------------------
-create table public.submissions (
+create table if not exists public.submissions (
   id                   uuid primary key default gen_random_uuid(),
   kind                 text not null default 'word' check (kind in
                          ('word','phrase','sentence','question','proverb','idiom',
@@ -106,14 +106,14 @@ create table public.submissions (
   created_at           timestamptz not null default now(),
   constraint submissions_has_meaning check (coalesce(bn,'') <> '' or coalesce(en,'') <> '')
 );
-create index submissions_status_idx on public.submissions (status, created_at);
+create index if not exists submissions_status_idx on public.submissions (status, created_at);
 
 
 -- ---------------------------------------------------------------------
 -- 5. RECORDINGS  (every approved voice clip, many speakers per word.
 --    This is the collection that can later train a Marma computer voice.)
 -- ---------------------------------------------------------------------
-create table public.recordings (
+create table if not exists public.recordings (
   id                   uuid primary key default gen_random_uuid(),
   entry_id             uuid not null references public.entries(id) on delete cascade,
   audio_path           text not null,        -- in bucket "media"
@@ -129,7 +129,7 @@ create table public.recordings (
 -- ---------------------------------------------------------------------
 -- 6. PROMPTS  (Bangla/English sentences we WANT in Marma – the phrasebook list)
 -- ---------------------------------------------------------------------
-create table public.prompts (
+create table if not exists public.prompts (
   id          uuid primary key default gen_random_uuid(),
   bn          text,
   en          text,
@@ -143,7 +143,7 @@ create table public.prompts (
 -- ---------------------------------------------------------------------
 -- 7. REPORTS  ("this word is wrong" messages from users. Private.)
 -- ---------------------------------------------------------------------
-create table public.reports (
+create table if not exists public.reports (
   id         uuid primary key default gen_random_uuid(),
   entry_id   uuid not null references public.entries(id) on delete cascade,
   message    text not null check (length(message) between 1 and 1000),
@@ -158,7 +158,9 @@ create table public.reports (
 -- ---------------------------------------------------------------------
 create or replace function public.touch_updated_at() returns trigger
 language plpgsql as $$ begin new.updated_at := now(); return new; end $$;
+drop trigger if exists entries_touch on public.entries;
 create trigger entries_touch before update on public.entries for each row execute function public.touch_updated_at();
+drop trigger if exists prompts_touch on public.prompts;
 create trigger prompts_touch before update on public.prompts for each row execute function public.touch_updated_at();
 
 
@@ -179,32 +181,48 @@ grant insert on public.submissions, public.reports to anon, authenticated;
 grant select, insert, update, delete on all tables in schema public to authenticated;
 
 -- Everyone may READ approved words, categories and the phrase list
+drop policy if exists "public reads categories" on public.categories;
 create policy "public reads categories" on public.categories for select using (true);
+drop policy if exists "public reads entries" on public.entries;
 create policy "public reads entries"    on public.entries    for select using (true);
+drop policy if exists "public reads prompts" on public.prompts;
 create policy "public reads prompts"    on public.prompts    for select using (true);
 
 -- Only reviewers may ADD or CHANGE them
+drop policy if exists "reviewers write categories" on public.categories;
 create policy "reviewers write categories" on public.categories for all to authenticated using (public.is_reviewer()) with check (public.is_reviewer());
+drop policy if exists "reviewers insert entries" on public.entries;
 create policy "reviewers insert entries"   on public.entries    for insert to authenticated with check (public.is_reviewer());
+drop policy if exists "reviewers update entries" on public.entries;
 create policy "reviewers update entries"   on public.entries    for update to authenticated using (public.is_reviewer()) with check (public.is_reviewer());
+drop policy if exists "reviewers write prompts" on public.prompts;
 create policy "reviewers write prompts"    on public.prompts    for all to authenticated using (public.is_reviewer()) with check (public.is_reviewer());
 
 -- Anyone may SEND a new word, but only as "pending". Only reviewers can read them.
+drop policy if exists "anyone sends submissions" on public.submissions;
 create policy "anyone sends submissions" on public.submissions for insert to anon, authenticated
   with check (status = 'pending' and reviewed_by is null and entry_id is null);
+drop policy if exists "reviewers read submissions" on public.submissions;
 create policy "reviewers read submissions"   on public.submissions for select to authenticated using (public.is_reviewer());
+drop policy if exists "reviewers update submissions" on public.submissions;
 create policy "reviewers update submissions" on public.submissions for update to authenticated using (public.is_reviewer()) with check (public.is_reviewer());
+drop policy if exists "reviewers delete submissions" on public.submissions;
 create policy "reviewers delete submissions" on public.submissions for delete to authenticated using (public.is_reviewer());
 
 -- Recordings: only reviewers (speaker details stay private)
+drop policy if exists "reviewers manage recordings" on public.recordings;
 create policy "reviewers manage recordings" on public.recordings for all to authenticated using (public.is_reviewer()) with check (public.is_reviewer());
 
 -- Reports: anyone may send, only reviewers read/close
+drop policy if exists "anyone sends reports" on public.reports;
 create policy "anyone sends reports"     on public.reports for insert to anon, authenticated with check (status = 'open');
+drop policy if exists "reviewers read reports" on public.reports;
 create policy "reviewers read reports"   on public.reports for select to authenticated using (public.is_reviewer());
+drop policy if exists "reviewers update reports" on public.reports;
 create policy "reviewers update reports" on public.reports for update to authenticated using (public.is_reviewer()) with check (public.is_reviewer());
 
 -- Reviewers: a logged-in person can see only their own reviewer row
+drop policy if exists "see own reviewer row" on public.reviewers;
 create policy "see own reviewer row" on public.reviewers for select to authenticated using (user_id = auth.uid());
 
 
@@ -268,15 +286,21 @@ insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_typ
      array['audio/webm','audio/ogg','audio/mp4','audio/mpeg','audio/wav','audio/aac','image/jpeg','image/png','image/webp'])
 on conflict (id) do nothing;
 
+drop policy if exists "anyone uploads to submissions" on storage.objects;
 create policy "anyone uploads to submissions" on storage.objects for insert to anon, authenticated
   with check (bucket_id = 'submissions');
+drop policy if exists "reviewers read submissions files" on storage.objects;
 create policy "reviewers read submissions files" on storage.objects for select to authenticated
   using (bucket_id = 'submissions' and public.is_reviewer());
+drop policy if exists "reviewers delete submissions files" on storage.objects;
 create policy "reviewers delete submissions files" on storage.objects for delete to authenticated
   using (bucket_id = 'submissions' and public.is_reviewer());
+drop policy if exists "reviewers add media" on storage.objects;
 create policy "reviewers add media" on storage.objects for insert to authenticated
   with check (bucket_id = 'media' and public.is_reviewer());
+drop policy if exists "reviewers change media" on storage.objects;
 create policy "reviewers change media" on storage.objects for update to authenticated
   using (bucket_id = 'media' and public.is_reviewer());
+drop policy if exists "reviewers delete media" on storage.objects;
 create policy "reviewers delete media" on storage.objects for delete to authenticated
   using (bucket_id = 'media' and public.is_reviewer());

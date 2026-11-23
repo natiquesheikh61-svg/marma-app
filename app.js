@@ -62,7 +62,7 @@ const T = {
     genders: { '': '—', female: 'নারী', male: 'পুরুষ', other: 'অন্যান্য' },
     ages: { '': '—', child: 'শিশু', young: 'তরুণ', adult: 'প্রাপ্তবয়স্ক', elder: 'বয়স্ক' },
     addTitle: 'মারমা শব্দ বা বাক্য যোগ করুন', kind: 'কী যোগ করবেন?',
-    marmaText: 'মারমা (মারমা হরফে)', marmaBn: 'মারমা — বাংলা হরফে লিখলে', pron: 'উচ্চারণ (ইংরেজি হরফে, জানলে)',
+    marmaText: 'মারমা (ইংরেজি হরফে লিখুন)', marmaHelp: 'মারমা শব্দটি যেমন শোনায়, ইংরেজি অক্ষরে লিখুন।', marmaBn: 'মারমা — বাংলা হরফেও লিখতে চাইলে', pron: 'উচ্চারণের বিশেষ টীকা (জানলে)',
     bnMeaning: 'বাংলা অর্থ', enMeaning: 'ইংরেজি অর্থ (জানলে)', needOne: 'মারমা হরফে বা বাংলা হরফে — অন্তত একটি লিখুন',
     category: 'বিষয়', moreDetails: '➕ আরও তথ্য (ইচ্ছা হলে)', posLabel: 'শব্দের ধরন',
     exMarma: 'উদাহরণ বাক্য (মারমা)', exBn: 'উদাহরণের বাংলা', exEn: 'উদাহরণের ইংরেজি', notes: 'অন্য কথা', dialect: 'এলাকা / উপভাষা',
@@ -154,7 +154,7 @@ const T = {
     genders: { '': '—', female: 'Female', male: 'Male', other: 'Other' },
     ages: { '': '—', child: 'Child', young: 'Young', adult: 'Adult', elder: 'Elder' },
     addTitle: 'Add a Marma word or sentence', kind: 'What are you adding?',
-    marmaText: 'Marma (in Marma letters)', marmaBn: 'Marma — written in Bangla letters', pron: 'Pronunciation (English letters, if you know)',
+    marmaText: 'Marma (write in English letters)', marmaHelp: 'Write the Marma the way it sounds, using English letters.', marmaBn: 'Marma — also in Bangla letters (optional)', pron: 'Pronunciation note (if you know)',
     bnMeaning: 'Bangla meaning', enMeaning: 'English meaning (if you know)', needOne: 'Write it in Marma letters or Bangla letters — at least one',
     category: 'Topic', moreDetails: '➕ More details (optional)', posLabel: 'Type of word',
     exMarma: 'Example sentence (Marma)', exBn: 'Example in Bangla', exEn: 'Example in English', notes: 'Other notes', dialect: 'Area / dialect',
@@ -310,11 +310,11 @@ const API = {
 
 /* ================= Storage on the phone (IndexedDB) ================= */
 const DB = {
-  db: null, STORES: ['mine', 'entries', 'prompts', 'categories'],
+  db: null, STORES: ['mine', 'entries', 'prompts', 'categories', 'units'],
   open() {
     if (this.db) return Promise.resolve(this.db);
     return new Promise((res, rej) => {
-      const r = indexedDB.open('marma-app', 3);
+      const r = indexedDB.open('marma-app', 4);
       r.onupgradeneeded = () => { for (const n of this.STORES) if (!r.result.objectStoreNames.contains(n)) r.result.createObjectStore(n, { keyPath: 'id' }); };
       r.onsuccess = () => { this.db = r.result; res(this.db); };
       r.onerror = () => rej(r.error);
@@ -335,11 +335,11 @@ const DB = {
 };
 
 /* ================= Data in memory ================= */
-let ENTRIES = [], PROMPTS = [], CATEGORIES = [], MINE = [];
+let ENTRIES = [], PROMPTS = [], CATEGORIES = [], MINE = [], UNITS = [];
 let SYNC = { state: 'idle', at: store.get('lastSyncAt', '') };
 
 async function loadLocal() {
-  [ENTRIES, PROMPTS, CATEGORIES, MINE] = await Promise.all(['entries', 'prompts', 'categories', 'mine'].map((n) => DB.all(n)));
+  [ENTRIES, PROMPTS, CATEGORIES, MINE, UNITS] = await Promise.all(['entries', 'prompts', 'categories', 'mine', 'units'].map((n) => DB.all(n)));
   // Tidy the outbox: give words saved by the older app version a proper ID, and remove sent words once approved
   const isUuid = (x) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(x);
   const approvedKeys = new Set(ENTRIES.map((e) => norm(e.marma) + '|' + norm(e.bn || e.en)));
@@ -349,9 +349,10 @@ async function loadLocal() {
   }
   MINE = MINE.filter((m) => !m.gone);
   // First visit with no saved copy yet: use the starter lists that come with the app
+  if (!UNITS.length) { try { UNITS = (await (await fetch('data/course.json')).json()).units; } catch (e) {} }
   if (!CATEGORIES.length) { try { CATEGORIES = (await (await fetch('data/categories.json')).json()).categories; } catch (e) {} }
   if (!PROMPTS.length && !store.get('lastSync', '')) {
-    try { PROMPTS = (await (await fetch('data/phrases.json')).json()).phrases.map((p) => ({ id: p.id, bn: p.bn, en: p.en, category_id: p.cat, is_active: true })); } catch (e) {}
+    try { PROMPTS = (await (await fetch('data/phrases.json')).json()).phrases.map((p) => ({ id: p.id, bn: p.bn, en: p.en, category_id: p.cat, is_active: true, code: p.code, unit: p.unit, sort: p.sort, item_type: p.item_type })); } catch (e) {}
   }
 }
 
@@ -368,6 +369,8 @@ async function syncDown() {
     if (rows.length < 1000) break;
   }
   const [prompts, cats] = await Promise.all([API.rest('prompts?select=*&is_active=eq.true&order=created_at.asc'), API.rest('categories?select=*&order=sort.asc')]);
+  try { const units = await API.rest('course_units?select=*&order=sort.asc'); if (units.length) await DB.putMany('units', units.map((u) => ({ ...u, id: u.code })), true); }
+  catch (e) { /* the learning update (4-learning-update.sql) has not been run yet: the built-in course list is used */ }
   await DB.putMany('prompts', prompts, true);
   await DB.putMany('categories', cats, true);
   store.set('lastSync', newest);
@@ -394,7 +397,7 @@ async function sendOne(m) {
       example_marma: m.example_marma || null, example_bn: m.example_bn || null, example_en: m.example_en || null,
       notes: m.notes || null, dialect: m.dialect || null, audio_path: m.audio_path || null, image_path: m.image_path || null,
       contributor_name: m.contributor_name || null, speaker_gender: m.speaker_gender || null, age_group: m.age_group || null,
-      consent_for_training: !!m.consent, device_id: deviceId };
+      consent_for_training: !!m.consent, device_id: deviceId, prompt_code: m.prompt_code || null };
     try { await API.insert('submissions', [row]); }
     catch (e) { if (e.status !== 409) throw e; } // 409 = already sent earlier
     m.sent = true; m.sentAt = new Date().toISOString(); await DB.put('mine', m);
@@ -417,7 +420,7 @@ function sync(showToast = false) {
     } catch (e) { console.warn('sync', e); SYNC.state = navigator.onLine ? 'fail' : 'idle'; SYNC.error = explainError(e); }
     await loadLocal(); syncing = null;
     const name = route();
-    if (['home', 'dictionary', 'phrasebook', 'add'].includes(name)) render(); else paintSync();
+    if (['home', 'dictionary', 'phrasebook', 'add', 'learn'].includes(name)) render(); else paintSync();
     if (showToast && SYNC.state === 'ok') toast('✔');
   })();
   return syncing;
@@ -431,7 +434,7 @@ function allEntries() {
   ENTRIES.forEach((e) => add({ ...e, type: e.kind, cat: e.category_id, trust: 'checked', audio: API.publicUrl(e.audio_path), image: API.publicUrl(e.image_path) }));
   MINE.forEach((m) => add({ ...m, trust: m.sent ? 'sent' : 'wait' }));
   const have = new Set(out.flatMap((e) => [norm(e.bn), norm(e.en)]).filter(Boolean));
-  PROMPTS.forEach((p) => { if (!have.has(norm(p.bn)) && !have.has(norm(p.en))) add({ id: 'p-' + p.id, type: 'sentence', bn: p.bn, en: p.en, cat: p.category_id, marma: '', trust: 'empty' }); });
+  PROMPTS.forEach((p) => { if (!have.has(norm(p.bn)) && !have.has(norm(p.en))) add({ id: 'p-' + p.id, type: p.item_type === 'word' ? 'word' : 'sentence', code: p.code, bn: p.bn, en: p.en, cat: p.category_id, marma: '', trust: 'empty' }); });
   return out;
 }
 const withMarma = () => allEntries().filter((e) => e.marma);
@@ -519,20 +522,30 @@ async function saveMediaOffline() {
 
 views.home = () => {
   const mm = withMarma();
+  const course = buildCourse(), cur = course.lessons.find((l) => l.current);
+  const readyWords = course.items.filter((i) => i.entry).length;
+  const tiles = [
+    ['learn', '🎓', t('learn'), 'c1'], ['translate', '🔁', t('translate'), 'c2'], ['talk', '🗣️', t('talk'), 'c3'],
+    ['phrasebook', '📖', t('phrasebook'), 'c4'], ['dictionary', '🔤', t('dictionary'), 'c5'], ['add', '➕', t('add'), 'c6']];
   return `
-  <p class="muted">${t('welcome')}</p>
-  <div class="tiles">
-    <a class="tile" href="#translate"><span class="emoji">🔁</span>${t('translate')}</a>
-    <a class="tile" href="#talk"><span class="emoji">🗣️</span>${t('talk')}</a>
-    <a class="tile" href="#phrasebook"><span class="emoji">📖</span>${t('phrasebook')}</a>
-    <a class="tile" href="#dictionary"><span class="emoji">🔤</span>${t('dictionary')}</a>
-    <a class="tile soon" href="#learn"><span class="emoji">🎓</span>${t('learn')}<small>${t('soon')}</small></a>
-    <a class="tile" href="#add"><span class="emoji">➕</span>${t('add')}</a>
+  <div class="hero pop-in">
+    <div class="hero-text">
+      <div class="hero-hello">${lang === 'bn' ? 'স্বাগতম!' : 'Welcome!'}</div>
+      <div class="hero-sub">${esc(t('welcome'))}</div>
+      <div class="hero-stats"><span>🔥 ${Progress.streak}</span><span>⭐ ${Progress.xp}</span><span>📚 ${readyWords}/${course.items.length}</span></div>
+    </div>
+    ${MASCOT}
   </div>
-  <p class="muted" style="text-align:center;margin-top:12px">${t('stats', mm.filter((e) => e.type !== 'word').length, mm.filter((e) => e.type === 'word').length)}</p>
+  ${cur ? `<a class="continue-card slide-in" href="#lesson/${cur.id}" style="--uc:${esc(cur.unit.color || '#1fa36b')}">
+      <span class="cc-emoji">${esc(cur.unit.emoji || '🎓')}</span>
+      <span style="flex:1"><small>${lang === 'bn' ? 'শেখা চালিয়ে যান' : 'Continue learning'}</small><b>${esc(lang === 'bn' ? cur.unit.title_bn : cur.unit.title_en)} · ${cur.review ? lt('review') : lt('lesson', cur.n)}</b></span>
+      <span class="cc-go">▶</span></a>` : ''}
+  <div class="tiles">${tiles.map(([h, e, l, c], i) => `<a class="tile ${c}" href="#${h}" style="animation-delay:${i * 60}ms"><span class="emoji">${e}</span>${esc(l)}</a>`).join('')}</div>
+  <p class="muted center small" style="margin-top:12px">${t('stats', mm.filter((e) => e.type !== 'word').length, mm.filter((e) => e.type === 'word').length)}</p>
   ${syncLine()}
   <div class="note">${t('honesty')}</div>`;
 };
+function wireHome() { /* tiles are plain links */ }
 
 /* ---------- Translate ---------- */
 views.translate = () => {
@@ -708,13 +721,14 @@ function renderDict() {
 views.add = () => `
   <h2>➕ ${t('addTitle')}</h2>
   <label for="fKind">${t('kind')}</label><select id="fKind">${options(t('kinds'), 'word')}</select>
-  <label for="fMarma">${t('marmaText')}</label><textarea id="fMarma" class="marma" style="min-height:80px"></textarea>
-  <label for="fMarmaBn">${t('marmaBn')}</label><input type="text" id="fMarmaBn">
-  <p class="muted" style="font-size:.85rem">${t('needOne')}</p>
+  <div class="note small" id="forItem" hidden></div>
+  <label for="fMarma">${t('marmaText')} *</label><textarea id="fMarma" class="marma-text" style="min-height:80px" autocapitalize="off" spellcheck="false"></textarea>
+  <p class="muted small">${t('marmaHelp')}</p>
   <label for="fBn">${t('bnMeaning')} *</label><input type="text" id="fBn">
   <label for="fEn">${t('enMeaning')}</label><input type="text" id="fEn">
   <label for="fCat">${t('category')}</label><select id="fCat">${CATEGORIES.map((c) => `<option value="${esc(c.id)}">${esc(catName(c.id))}</option>`).join('')}</select>
   <details class="card"><summary style="font-weight:700;cursor:pointer;min-height:40px">${t('moreDetails')}</summary>
+    <label for="fMarmaBn">${t('marmaBn')}</label><input type="text" id="fMarmaBn">
     <label for="fPron">${t('pron')}</label><input type="text" id="fPron">
     <label for="fPos">${t('posLabel')}</label><select id="fPos">${options(t('pos'), '')}</select>
     <label for="fExM">${t('exMarma')}</label><input type="text" id="fExM" class="marma">
@@ -741,7 +755,7 @@ views.add = () => `
   <div id="mineList"></div>
   <a class="btn secondary full" href="#check" style="margin-top:20px">${t('forCheckers')}</a>`;
 
-let recorder = null, recChunks = [], recBlob = null, photoBlob = null;
+let recorder = null, recChunks = [], recBlob = null, photoBlob = null, addFor = null;
 async function toggleRecord() {
   const btn = $('#recBtn'), state = $('#recState');
   if (recorder && recorder.state === 'recording') { recorder.stop(); return; }
@@ -775,15 +789,14 @@ function shrinkImage(file) {
 }
 async function saveMine() {
   const v = (id) => ($('#' + id).value || '').trim();
-  let marma = v('fMarma'); const marmaBn = v('fMarmaBn'), bn = v('fBn'), en = v('fEn');
-  if (!marma) marma = marmaBn; // written only in Bangla letters
+  const marma = v('fMarma'), marmaBn = v('fMarmaBn'), bn = v('fBn'), en = v('fEn');
   if (!marma || (!bn && !en)) { toast(t('needMarma')); return; }
   store.set('myName', v('fName')); store.set('myGender', v('fGender')); store.set('myAge', v('fAge')); store.set('myConsent', $('#fConsent').checked ? '1' : '');
   await DB.put('mine', { id: uuid(), type: v('fKind'), marma, marma_bn_script: marmaBn, pronunciation: v('fPron'), bn, en, cat: v('fCat'),
     part_of_speech: v('fPos'), example_marma: v('fExM'), example_bn: v('fExBn'), example_en: v('fExEn'), dialect: v('fDialect'), notes: v('fNotes'),
     audioBlob: recBlob, imageBlob: photoBlob, contributor_name: v('fName'), speaker_gender: v('fGender'), age_group: v('fAge'),
-    consent: $('#fConsent').checked, sent: false, created: new Date().toISOString() });
-  recBlob = null; photoBlob = null;
+    consent: $('#fConsent').checked, prompt_code: addFor || null, sent: false, created: new Date().toISOString() });
+  recBlob = null; photoBlob = null; addFor = null;
   await loadLocal(); render();
   if (API.on() && navigator.onLine) { await sync(); toast(MINE.some((m) => !m.sent) ? t('savedOffline2') : t('sentNow')); }
   else toast(API.on() ? t('savedOffline2') : t('saved'));
@@ -994,20 +1007,31 @@ async function runTest() {
 }
 function atobSafe(x) { try { return atob(String(x || '').replace(/-/g, '+').replace(/_/g, '/')); } catch (e) { return ''; } }
 
-views.learn = () => `<h2>🎓 ${t('learnSoon')}</h2><div class="note">${t('learnSoonText')}</div><a class="btn secondary" href="#home">${t('back')}</a>`;
+/* ---------- Bottom menu ---------- */
+function paintNav() {
+  const nav = $('#bnav'); if (!nav) return;
+  const items = [['home', '🏠', t('home')], ['learn', '🎓', t('learn')], ['translate', '🔁', t('translate')], ['talk', '🗣️', t('talk')], ['dictionary', '🔤', t('dictionary')]];
+  const cur = route();
+  nav.innerHTML = items.map(([p, e, l]) => `<a href="#${p}" data-page="${p}" class="${cur === p || (cur === 'lesson' && p === 'learn') ? 'on' : ''}"><span class="ni">${e}</span><span class="nl">${esc(l)}</span></a>`).join('');
+}
 
 /* ================= Page switching ================= */
-const route = () => (location.hash || '#home').slice(1);
+const route = () => (location.hash || '#home').slice(1).split('/')[0];
+const routeArg = () => (location.hash || '').slice(1).split('/').slice(1).join('/');
 function render() {
-  const name = route();
-  const view = views[name] || views.home;
+  const name = views[route()] ? route() : 'home';
+  const view = views[name];
+  document.body.classList.toggle('in-lesson', name === 'lesson');
+  $$('.bnav a').forEach((a) => a.classList.toggle('on', a.dataset.page === name || (name === 'lesson' && a.dataset.page === 'learn')));
+  paintNav();
   document.documentElement.lang = lang;
   $('#appTitle').textContent = t('appTitle');
   $('#langBtn').textContent = t('switchTo');
   $('#homeBtn').setAttribute('aria-label', t('home'));
   CARD_ENTRIES = [];
   const keepScroll = render.last === name ? window.scrollY : 0;
-  $('#app').innerHTML = view();
+  $('#app').innerHTML = view(routeArg());
+  if (render.last !== name) { $('#app').classList.remove('page-in'); void $('#app').offsetWidth; $('#app').classList.add('page-in'); }
   wire(name);
   paintOffline();
   if (render.last !== name) { $('#app').focus({ preventScroll: true }); window.scrollTo(0, 0); } else window.scrollTo(0, keepScroll);
@@ -1021,6 +1045,9 @@ function wireCards(root = document) {
 }
 function wire(name) {
   wireCards(); wireSync();
+  if (name === 'learn') wireLearn();
+  if (name === 'lesson') wireLesson();
+  if (name === 'home') wireHome();
   if (name === 'translate') {
     $('#goTr').onclick = doTranslate; $('#src').oninput = showSuggestions;
     $('#dir').onchange = () => { store.set('dir', $('#dir').value); render.last = ''; render(); };
@@ -1037,7 +1064,7 @@ function wire(name) {
   if (name === 'phrasebook') {
     $$('.catChip').forEach((c) => c.onclick = () => { phraseCat = c.dataset.cat; render(); });
     $$('.addMarma').forEach((a) => a.onclick = () => { const p = CARD_ENTRIES[+a.dataset.i];
-      sessionStorage.setItem('prefill', JSON.stringify({ bn: p.bn, en: p.en, cat: p.cat, type: 'sentence' })); });
+      sessionStorage.setItem('prefill', JSON.stringify({ bn: p.bn, en: p.en, cat: p.cat, type: p.type === 'word' ? 'word' : 'sentence', code: p.code })); });
   }
   if (name === 'dictionary') {
     $('#dq').oninput = renderDict;
@@ -1052,6 +1079,8 @@ function wire(name) {
     if (pre.bn) $('#fBn').value = pre.bn;
     if (pre.en) $('#fEn').value = pre.en;
     if (pre.cat && CATEGORIES.some((c) => c.id === pre.cat)) $('#fCat').value = pre.cat;
+    addFor = pre.code || null;
+    if (pre.code) { const f = $('#forItem'); f.hidden = false; f.innerHTML = `🎓 ${esc(lang === 'bn' ? (pre.bn || pre.en) : (pre.en || pre.bn))}`; setTimeout(() => $('#fMarma').focus(), 300); }
     $('#recBtn').onclick = toggleRecord; $('#saveBtn').onclick = saveMine;
     $('#fPhoto').onchange = async (e) => {
       const f = e.target.files[0]; if (!f) return;

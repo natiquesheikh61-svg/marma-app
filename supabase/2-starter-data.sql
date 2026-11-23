@@ -1,4 +1,4 @@
--- Marma Translator – starter data. Run AFTER 1-setup-database.sql.
+-- Marma Translator – starter data. Run AFTER 1-setup-database.sql. Safe to run again (adds nothing twice).
 -- Only topics and Bangla/English sentences. NO Marma words (those come from Marma speakers).
 
 insert into public.categories (id, name_bn, name_en, sort) values
@@ -19,7 +19,8 @@ insert into public.categories (id, name_bn, name_en, sort) values
   ('other', 'অন্যান্য', 'Other', 14)
 on conflict (id) do nothing;
 
-insert into public.prompts (bn, en, category_id) values
+insert into public.prompts (bn, en, category_id)
+select v.bn, v.en, v.cat from (values
   ('আপনি কেমন আছেন?', 'How are you?', 'greet'),
   ('আমি ভালো আছি।', 'I am fine.', 'greet'),
   ('আপনার নাম কী?', 'What is your name?', 'greet'),
@@ -57,4 +58,6 @@ insert into public.prompts (bn, en, category_id) values
   ('ইনি আমার মা।', 'This is my mother.', 'family'),
   ('ইনি আমার বাবা।', 'This is my father.', 'family'),
   ('আপনার গ্রাম কোথায়?', 'Where is your village?', 'family'),
-  ('আপনার কয়টি সন্তান আছে?', 'How many children do you have?', 'family');
+  ('আপনার কয়টি সন্তান আছে?', 'How many children do you have?', 'family')
+) as v(bn, en, cat)
+where not exists (select 1 from public.prompts p where p.bn = v.bn);

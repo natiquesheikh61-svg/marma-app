@@ -1,0 +1,125 @@
+{
+ "_readme": "Learning course units (Bangla/English only). Marma comes from Marma speakers.",
+ "units": [
+  {
+   "code": "u01",
+   "sort": 1,
+   "emoji": "👋",
+   "color": "#1fa36b",
+   "title_bn": "শুভেচ্ছা ও ভদ্রতা",
+   "title_en": "Greetings & manners",
+   "desc_bn": "প্রথম দেখায় যা বলা হয়",
+   "desc_en": "What you say when you meet someone"
+  },
+  {
+   "code": "u02",
+   "sort": 2,
+   "emoji": "🙋",
+   "color": "#2d9cdb",
+   "title_bn": "নিজের পরিচয়",
+   "title_en": "About me",
+   "desc_bn": "নাম, কোথা থেকে, আমি-আপনি",
+   "desc_en": "Names, where you are from, I and you"
+  },
+  {
+   "code": "u03",
+   "sort": 3,
+   "emoji": "👨‍👩‍👧",
+   "color": "#ff8a3d",
+   "title_bn": "পরিবার",
+   "title_en": "Family",
+   "desc_bn": "মা, বাবা, ভাই, বোন",
+   "desc_en": "Mother, father, brothers, sisters"
+  },
+  {
+   "code": "u04",
+   "sort": 4,
+   "emoji": "🔢",
+   "color": "#7b5cff",
+   "title_bn": "সংখ্যা ১–১০",
+   "title_en": "Numbers 1–10",
+   "desc_bn": "এক থেকে দশ গোনা",
+   "desc_en": "Counting from one to ten"
+  },
+  {
+   "code": "u05",
+   "sort": 5,
+   "emoji": "🍚",
+   "color": "#e0a100",
+   "title_bn": "খাবার ও পানীয়",
+   "title_en": "Food & drink",
+   "desc_bn": "ভাত, পানি, মাছ — আর খাওয়ার কথা",
+   "desc_en": "Rice, water, fish — and talking about food"
+  },
+  {
+   "code": "u06",
+   "sort": 6,
+   "emoji": "🏠",
+   "color": "#ff5c8a",
+   "title_bn": "প্রতিদিনের কাজ",
+   "title_en": "Daily actions",
+   "desc_bn": "খাওয়া, ঘুম, যাওয়া, আসা",
+   "desc_en": "Eat, sleep, go, come"
+  },
+  {
+   "code": "u07",
+   "sort": 7,
+   "emoji": "📅",
+   "color": "#2fb5a8",
+   "title_bn": "সময় ও দিন",
+   "title_en": "Time & days",
+   "desc_bn": "আজ, কাল, সকাল, রাত",
+   "desc_en": "Today, tomorrow, morning, night"
+  },
+  {
+   "code": "u08",
+   "sort": 8,
+   "emoji": "🛒",
+   "color": "#1fa36b",
+   "title_bn": "বাজারে",
+   "title_en": "At the market",
+   "desc_bn": "দাম জিজ্ঞেস করা, কেনা",
+   "desc_en": "Asking prices and buying"
+  },
+  {
+   "code": "u09",
+   "sort": 9,
+   "emoji": "🧭",
+   "color": "#2d9cdb",
+   "title_bn": "পথ চলা",
+   "title_en": "Getting around",
+   "desc_bn": "রাস্তা, গ্রাম, কাছে, দূরে",
+   "desc_en": "Roads, villages, near and far"
+  },
+  {
+   "code": "u10",
+   "sort": 10,
+   "emoji": "🩺",
+   "color": "#ff8a3d",
+   "title_bn": "শরীর ও স্বাস্থ্য",
+   "title_en": "Body & health",
+   "desc_bn": "মাথা, হাত, জ্বর, ডাক্তার",
+   "desc_en": "Head, hand, fever, doctor"
+  },
+  {
+   "code": "u11",
+   "sort": 11,
+   "emoji": "😊",
+   "color": "#7b5cff",
+   "title_bn": "অনুভূতি",
+   "title_en": "Feelings",
+   "desc_bn": "খুশি, ক্লান্ত, ভালো লাগা",
+   "desc_en": "Happy, tired, likes and dislikes"
+  },
+  {
+   "code": "u12",
+   "sort": 12,
+   "emoji": "💬",
+   "color": "#ff5c8a",
+   "title_bn": "প্রতিদিনের কথাবার্তা",
+   "title_en": "Everyday talk",
+   "desc_bn": "প্রশ্ন করা ও ছোট আলাপ",
+   "desc_en": "Asking questions and small talk"
+  }
+ ]
+}
