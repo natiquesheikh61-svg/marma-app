@@ -1,6 +1,6 @@
 // Offline helper. Saves the website in the browser so it opens without internet.
 // When you change any file, increase this number by 1 so phones get the new version.
-const VERSION = 'marma-v3';
+const VERSION = 'marma-v4';
 const MEDIA = 'marma-media'; // approved voices & pictures from Supabase (kept between versions)
 
 const FILES = [

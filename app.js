@@ -13,6 +13,19 @@
 /* ================= Words for the menus (Bangla + English) ================= */
 const T = {
   bn: {
+    findProblem: '🩺 সমস্যা খুঁজুন',
+    errOffline: 'এই ফোনে এখন ইন্টারনেট নেই।',
+    errUrl: 'ডেটাবেসের ঠিকানা (SUPABASE_URL) ভুল, অথবা ইন্টারনেট কাজ করছে না।',
+    errKey: 'চাবি (SUPABASE_KEY) ভুল। config.js-এ Publishable key আবার কপি করে বসান।',
+    errTables: 'টেবিল পাওয়া যায়নি। Supabase-এ 1-setup-database.sql চালানো হয়েছে কি না দেখুন।',
+    errRules: 'অনুমতির সমস্যা। 1-setup-database.sql আবার চালান (নিরাপদ)।',
+    errPaused: 'Supabase প্রকল্পটি ঘুমিয়ে আছে। supabase.com-এ গিয়ে "Restore project" চাপুন।',
+    tInternet: 'ইন্টারনেট', tUrl: 'ডেটাবেসের ঠিকানা (SUPABASE_URL)', tKey: 'চাবি (SUPABASE_KEY)',
+    tUrlHelp: 'এমন হওয়া উচিত: https://abcdxyz.supabase.co — শুধু এটুকু, শেষে কিছু নয়।',
+    tKeyHelp: 'এটি sb_publishable_ দিয়ে শুরু হওয়া উচিত (অথবা পুরনো anon key, eyJ দিয়ে শুরু)।',
+    tSecret: '⚠ এটি গোপন (secret) চাবি! এখনই সরিয়ে Publishable key বসান, এবং Supabase-এ এই secret key বদলে নিন।',
+    tTopics: 'বিষয়ের তালিকা পড়া যাচ্ছে', tPhrases: 'বাক্যের তালিকা পড়া যাচ্ছে', tWords: 'শব্দের তালিকা পড়া যাচ্ছে',
+    tAllGood: 'সব ঠিক আছে! ডেটাবেস যুক্ত।',
     appTitle: 'মারমা অনুবাদক', switchTo: 'English', home: 'হোম',
     translate: 'অনুবাদ', talk: 'কথা বলুন', phrasebook: 'দরকারি বাক্য', dictionary: 'অভিধান',
     learn: 'মারমা শিখুন', add: 'যোগ করুন', soon: 'শীঘ্রই আসছে',
@@ -92,6 +105,19 @@ const T = {
     back: '← ফিরে যান'
   },
   en: {
+    findProblem: '🩺 Find the problem',
+    errOffline: 'This phone has no internet right now.',
+    errUrl: 'The database address (SUPABASE_URL) is wrong, or the internet is not working.',
+    errKey: 'The key (SUPABASE_KEY) is wrong. Copy the Publishable key again into config.js.',
+    errTables: 'Tables not found. Check that 1-setup-database.sql was run in Supabase.',
+    errRules: 'Permission problem. Run 1-setup-database.sql again (it is safe).',
+    errPaused: 'The Supabase project is asleep. Go to supabase.com and press "Restore project".',
+    tInternet: 'Internet', tUrl: 'Database address (SUPABASE_URL)', tKey: 'Key (SUPABASE_KEY)',
+    tUrlHelp: 'It should look like: https://abcdxyz.supabase.co — just that, nothing after it.',
+    tKeyHelp: 'It should start with sb_publishable_ (or the older anon key, starting with eyJ).',
+    tSecret: '⚠ This is the SECRET key! Remove it now and use the Publishable key, then change (roll) this secret key in Supabase.',
+    tTopics: 'Can read the topics', tPhrases: 'Can read the phrase list', tWords: 'Can read the words',
+    tAllGood: 'All good! The database is connected.',
     appTitle: 'Marma Translator', switchTo: 'বাংলা', home: 'Home',
     translate: 'Translate', talk: 'Talk', phrasebook: 'Phrasebook', dictionary: 'Dictionary',
     learn: 'Learn Marma', add: 'Add', soon: 'Coming soon',
@@ -215,7 +241,14 @@ const options = (obj, cur) => Object.entries(obj).map(([v, l]) => `<option value
 const extOf = (type) => (/webm/.test(type) ? 'webm' : /ogg/.test(type) ? 'ogg' : /mp4|aac|m4a/.test(type) ? 'm4a' : /mpeg|mp3/.test(type) ? 'mp3' : /wav/.test(type) ? 'wav' : /png/.test(type) ? 'png' : /webp/.test(type) ? 'webp' : 'jpg');
 
 /* ================= Supabase connection (plain web requests, no extra library) ================= */
-const CFG = { url: String((window.MARMA_CONFIG || {}).SUPABASE_URL || '').replace(/\/+$/, ''), key: String((window.MARMA_CONFIG || {}).SUPABASE_KEY || '') };
+const CFG = (() => {
+  const c = window.MARMA_CONFIG || {};
+  let url = String(c.SUPABASE_URL || '').trim().replace(/^["'\s]+|["'\s]+$/g, '');
+  if (url && !/^https?:\/\//i.test(url)) url = 'https://' + url;
+  try { if (url) url = new URL(url).origin; } catch (e) { /* the test page will explain */ }
+  const key = String(c.SUPABASE_KEY || '').trim().replace(/^["'\s]+|["'\s]+$/g, '').replace(/\s+/g, '');
+  return { url, key };
+})();
 const Auth = {
   session: JSON.parse(store.get('sbSession', 'null')),
   reviewer: JSON.parse(store.get('sbReviewer', 'null')),
@@ -375,9 +408,13 @@ function sync(showToast = false) {
   SYNC.state = 'busy'; paintSync();
   syncing = (async () => {
     try {
-      await loadLocal(); await syncUp(); await syncDown();
+      await loadLocal();
+      let upErr = null;
+      try { await syncUp(); } catch (e) { upErr = e; }
+      await syncDown();
+      if (upErr) throw upErr;
       SYNC = { state: 'ok', at: new Date().toISOString() }; store.set('lastSyncAt', SYNC.at);
-    } catch (e) { console.warn('sync', e); SYNC.state = navigator.onLine ? 'fail' : 'idle'; }
+    } catch (e) { console.warn('sync', e); SYNC.state = navigator.onLine ? 'fail' : 'idle'; SYNC.error = explainError(e); }
     await loadLocal(); syncing = null;
     const name = route();
     if (['home', 'dictionary', 'phrasebook', 'add'].includes(name)) render(); else paintSync();
@@ -461,7 +498,9 @@ const cardIndex = (e) => CARD_ENTRIES.push(e) - 1;
 function syncLine() {
   if (!API.on()) return `<div class="note warn">${t('notConnected')}</div>`;
   const waiting = MINE.filter((m) => !m.sent).length + JSON.parse(store.get('reportOutbox', '[]')).length;
-  const status = SYNC.state === 'busy' ? t('syncing') : SYNC.state === 'fail' ? t('syncFail') : t('syncOk', ago(SYNC.at));
+  const status = SYNC.state === 'busy' ? t('syncing') : SYNC.state === 'fail'
+    ? `${t('syncFail')}<br><b>${esc(SYNC.error || '')}</b><br><a class="btn small secondary" href="#test" style="margin-top:8px">${t('findProblem')}</a>`
+    : t('syncOk', ago(SYNC.at));
   return `<div class="note" id="syncNote"><div>${status}</div>${waiting ? `<div style="margin-top:4px">${t('outboxCount', waiting)}</div>` : ''}
     <div class="btn-row"><button class="btn small secondary" id="syncBtn">${t('refresh')}</button>
     <button class="btn small secondary" id="offlineMediaBtn">${t('saveOffline')}</button></div></div>`;
@@ -919,6 +958,42 @@ async function doImport() {
   } catch (e) { btn.disabled = false; btn.textContent = t('importGo'); toast(t('error') + ' ' + e.message); }
 }
 
+/* ---------- Connection test ("Find the problem") ---------- */
+function explainError(e) {
+  const msg = String((e && e.message) || e || '');
+  const st = e && e.status;
+  if (!navigator.onLine) return t('errOffline');
+  if (/Failed to fetch|NetworkError|Load failed|TypeError/i.test(msg) && !st) return t('errUrl');
+  if (st === 401 || /Invalid API key|No API key|apikey|JWT/i.test(msg)) return t('errKey');
+  if (st === 404 || /does not exist|PGRST205|schema cache/i.test(msg)) return t('errTables');
+  if (st === 403 || /permission denied|42501|row-level security/i.test(msg)) return t('errRules');
+  if (/paused|restore/i.test(msg) || st === 540 || st === 503) return t('errPaused');
+  return (st ? 'HTTP ' + st + ': ' : '') + msg.slice(0, 200);
+}
+views.test = () => `<h2>🩺 ${t('findProblem')}</h2><div id="testOut"><p>⏳</p></div>
+  <a class="btn secondary" href="#home" style="margin-top:12px">${t('back')}</a>`;
+async function runTest() {
+  const out = $('#testOut'), rows = [];
+  const show = () => { out.innerHTML = rows.map(([ok, label, detail]) => `<div class="card"><b>${ok ? '✅' : '❌'} ${label}</b>${detail ? `<div class="line" style="margin-top:6px">${detail}</div>` : ''}</div>`).join(''); };
+  const raw = window.MARMA_CONFIG || {};
+  rows.push([navigator.onLine, t('tInternet'), navigator.onLine ? '' : esc(t('errOffline'))]);
+  const urlOk = /^https:\/\/[a-z0-9-]+\.supabase\.co$/i.test(CFG.url);
+  rows.push([urlOk, t('tUrl'), `<code>${esc(raw.SUPABASE_URL || '(empty)')}</code>${urlOk ? '' : '<br>' + esc(t('tUrlHelp'))}`]);
+  const keyOk = /^sb_publishable_[A-Za-z0-9_-]{10,}$/.test(CFG.key) || /^eyJ[\w-]+\.[\w-]+\.[\w-]+$/.test(CFG.key);
+  const secret = /^sb_secret_/.test(CFG.key) || /service_role/.test(atobSafe(CFG.key.split('.')[1]));
+  rows.push([keyOk && !secret, t('tKey'), `<code>${esc(CFG.key ? CFG.key.slice(0, 18) + '…' : '(empty)')}</code>` +
+    (secret ? '<br><b>' + esc(t('tSecret')) + '</b>' : keyOk ? '' : '<br>' + esc(t('tKeyHelp')))]);
+  show();
+  if (!navigator.onLine || !CFG.url || !CFG.key || secret) return;
+  for (const [label, path] of [[t('tTopics'), 'categories?select=id&limit=1'], [t('tPhrases'), 'prompts?select=id&limit=1'], [t('tWords'), 'entries?select=id&limit=1']]) {
+    try { await API.rest(path); rows.push([true, label, '']); }
+    catch (e) { rows.push([false, label, `<b>${esc(explainError(e))}</b><br><small class="muted">${esc(String(e.message || e).slice(0, 300))}</small>`]); show(); return; }
+    show();
+  }
+  rows.push([true, t('tAllGood'), '']); show();
+}
+function atobSafe(x) { try { return atob(String(x || '').replace(/-/g, '+').replace(/_/g, '/')); } catch (e) { return ''; } }
+
 views.learn = () => `<h2>🎓 ${t('learnSoon')}</h2><div class="note">${t('learnSoonText')}</div><a class="btn secondary" href="#home">${t('back')}</a>`;
 
 /* ================= Page switching ================= */
@@ -957,6 +1032,7 @@ function wire(name) {
       finally { btn.textContent = '🎤'; btn.disabled = false; }
     };
   }
+  if (name === 'test') runTest();
   if (name === 'talk') { $('#talkMic').onclick = talkListen; $('#talkFilter').oninput = renderTalkList; renderTalkList(); }
   if (name === 'phrasebook') {
     $$('.catChip').forEach((c) => c.onclick = () => { phraseCat = c.dataset.cat; render(); });
